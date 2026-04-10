@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1B6B4A"/>
+      <stop offset="100%" style="stop-color:#0F4A32"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="38" fill="url(#bg)"/>
+  <circle cx="96" cy="72" r="36" fill="#C4953A"/>
+  <circle cx="111" cy="66" r="30" fill="#1B6B4A"/>
+  <text x="96" y="148" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="28" fill="#F0F4F8">FAJR</text>
+</svg>

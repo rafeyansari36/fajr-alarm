@@ -1,0 +1,170 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap');
+
+:root {
+  --primary: #1B6B4A;
+  --primary-light: #2A9D6F;
+  --primary-dark: #0F4A32;
+  --secondary: #C4953A;
+  --secondary-light: #E8B84A;
+  --bg-dark: #0A1628;
+  --bg-card: #111D35;
+  --bg-card-hover: #162442;
+  --text-primary: #F0F4F8;
+  --text-secondary: #8FA3BF;
+  --text-muted: #5A6F8A;
+  --accent-red: #E04D5E;
+  --accent-green: #2ECC71;
+  --border: rgba(255, 255, 255, 0.08);
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
+
+input, select, textarea { font-family: inherit; outline: none; }
+button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+a { text-decoration: none; color: inherit; }
+
+.geo-pattern {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.03;
+  background-image:
+    radial-gradient(circle at 25% 25%, var(--primary) 2px, transparent 2px),
+    radial-gradient(circle at 75% 75%, var(--secondary) 1.5px, transparent 1.5px);
+  background-size: 60px 60px;
+}
+
+.ambient-glow {
+  position: fixed;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+.ambient-glow.top { top: -100px; right: -50px; background: var(--primary); }
+.ambient-glow.bottom { bottom: -100px; left: -50px; background: var(--secondary); }
+
+.page-container {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: 0 20px 100px;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 72px;
+  background: rgba(10, 22, 40, 0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  transition: color 0.2s;
+  padding: 8px 16px;
+}
+.bottom-nav a.active { color: var(--primary-light); }
+.bottom-nav a svg { width: 22px; height: 22px; }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  box-shadow: 0 4px 16px rgba(27, 107, 74, 0.3);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(27, 107, 74, 0.4);
+}
+.btn-primary:active { transform: translateY(0); }
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn-danger {
+  background: linear-gradient(135deg, var(--accent-red), #c0392b);
+  color: white;
+  box-shadow: 0 4px 16px rgba(224, 77, 94, 0.3);
+}
+.btn-full { width: 100%; }
+
+.arabic-text { font-family: 'Amiri', serif; direction: rtl; }
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(224, 77, 94, 0.4); }
+  50% { box-shadow: 0 0 40px rgba(224, 77, 94, 0.8); }
+}
