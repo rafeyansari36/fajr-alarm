@@ -8,6 +8,7 @@ const steps = [
     icon: Moon,
     title: 'Rise for Fajr',
     subtitle: 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
+    subtitleTranslation: 'Allah in the name of, the Most Gracious, the Most Merciful',
     description: 'Never miss Fajr again. A smart alarm that ensures you truly wake up.',
     color: '#1B6B4A',
   },
@@ -15,6 +16,7 @@ const steps = [
     icon: Bell,
     title: 'Smart Alarm',
     subtitle: 'Cannot be dismissed easily',
+    subtitleTranslation: '',
     description: 'When the alarm rings, you must scan a QR code to stop it. No snooze, no cheating.',
     color: '#E04D5E',
   },
@@ -22,6 +24,7 @@ const steps = [
     icon: QrCode,
     title: 'QR Code System',
     subtitle: 'Place it far from your bed',
+    subtitleTranslation: '',
     description: 'Generate a unique QR code and place it near your bathroom. You must get up to scan it.',
     color: '#C4953A',
   },
@@ -29,6 +32,7 @@ const steps = [
     icon: Smartphone,
     title: 'Install the App',
     subtitle: 'Works offline as a PWA',
+    subtitleTranslation: '',
     description: 'Add this to your home screen for the best experience. Works even without internet.',
     color: '#2A9D6F',
   },
@@ -139,14 +143,25 @@ export default function Onboarding() {
             {current.title}
           </h1>
 
-          <p className="arabic-text" style={{
+          <p className={step === 0 ? 'arabic-text' : ''} style={{
             fontSize: step === 0 ? 22 : 14,
             color: 'var(--text-secondary)',
-            marginBottom: 16,
+            marginBottom: current.subtitleTranslation ? 6 : 16,
             fontWeight: step === 0 ? 400 : 500,
           }}>
             {current.subtitle}
           </p>
+
+          {current.subtitleTranslation && (
+            <p style={{
+              fontSize: 12,
+              color: 'var(--text-muted)',
+              marginBottom: 16,
+              fontStyle: 'italic',
+            }}>
+              {current.subtitleTranslation}
+            </p>
+          )}
 
           <p style={{
             fontSize: 16,

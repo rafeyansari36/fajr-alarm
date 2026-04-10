@@ -1,16 +1,18 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Clock, Trash2, Moon, Sun, ChevronRight } from 'lucide-react';
+import { Plus, Clock, Trash2, Pencil, Moon, Sun, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { calculatePrayerTimes, PRAYER_NAMES } from '../utils/prayer';
 import { getNextAlarmInfo } from '../utils/alarm';
+import { type Alarm } from '../utils/storage';
 import AddAlarmModal from '../components/AddAlarmModal';
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function Home() {
   const { state, toggleAlarm, deleteAlarm } = useApp();
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingAlarm, setEditingAlarm] = useState<Alarm | null>(null);
 
   const prayerTimes = useMemo(() => {
     if (state.location) {
@@ -26,8 +28,12 @@ export default function Home() {
   const isNight = hours < 6 || hours >= 18;
   const greeting = hours < 12 ? 'Good Morning' : hours < 18 ? 'Good Afternoon' : 'Good Evening';
 
+  const openAdd = () => { setEditingAlarm(null); setShowModal(true); };
+  const openEdit = (alarm: Alarm) => { setEditingAlarm(alarm); setShowModal(true); };
+  const closeModal = () => { setEditingAlarm(null); setShowModal(false); };
+
   return (
-    <div className="page-container" style={{ paddingTop: 20 }}>
+    <div className="page-container" style={{ paddingTop: 20, paddingBottom: 140 }}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -43,6 +49,9 @@ export default function Home() {
         </h1>
         <p className="arabic-text" style={{ fontSize: 18, color: 'var(--secondary)', marginTop: 4 }}>
           قُمْ فَصَلِّ
+        </p>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, fontStyle: 'italic' }}>
+          "Rise and pray"
         </p>
       </motion.div>
 
@@ -68,13 +77,9 @@ export default function Home() {
               </p>
             </div>
             <div style={{
-              width: 56,
-              height: 56,
-              borderRadius: '50%',
+              width: 56, height: 56, borderRadius: '50%',
               background: 'rgba(42, 157, 111, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <Clock size={24} color="var(--primary-light)" />
             </div>
@@ -110,24 +115,9 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Alarms List */}
+      {/* Alarms List Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2 style={{ fontSize: 18, fontWeight: 600 }}>Alarms</h2>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setShowAddModal(true)}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'var(--primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Plus size={20} color="white" />
-        </motion.button>
       </div>
 
       {state.alarms.length === 0 ? (
@@ -156,46 +146,64 @@ export default function Home() {
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ delay: i * 0.05 }}
                 className="card"
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  opacity: alarm.enabled ? 1 : 0.5,
-                }}
+                style={{ opacity: alarm.enabled ? 1 : 0.5 }}
               >
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                    <span style={{ fontSize: 36, fontWeight: 300, letterSpacing: '-1px' }}>
-                      {alarm.time}
-                    </span>
-                    {alarm.usePrayerTime && (
-                      <span style={{
-                        fontSize: 11,
-                        background: 'rgba(42, 157, 111, 0.15)',
-                        color: 'var(--primary-light)',
-                        padding: '2px 8px',
-                        borderRadius: 4,
-                      }}>
-                        {alarm.prayerName}
+                {/* Top row: time + toggle */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                      <span style={{ fontSize: 36, fontWeight: 300, letterSpacing: '-1px' }}>
+                        {alarm.time}
                       </span>
-                    )}
+                      {alarm.usePrayerTime && (
+                        <span style={{
+                          fontSize: 11,
+                          background: 'rgba(42, 157, 111, 0.15)',
+                          color: 'var(--primary-light)',
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                        }}>
+                          {alarm.prayerName}
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+                      {alarm.label}
+                    </p>
                   </div>
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
-                    {alarm.label}
-                  </p>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+
+                  <div
+                    onClick={() => toggleAlarm(alarm.id)}
+                    style={{
+                      position: 'relative', width: 52, height: 28,
+                      background: alarm.enabled ? 'var(--primary)' : 'var(--bg-dark)',
+                      borderRadius: 14, cursor: 'pointer', transition: 'background 0.3s ease',
+                      border: `1px solid ${alarm.enabled ? 'var(--primary-light)' : 'var(--border)'}`,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 2, left: alarm.enabled ? 26 : 2,
+                      width: 22, height: 22, background: 'white', borderRadius: '50%',
+                      transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    }} />
+                  </div>
+                </div>
+
+                {/* Bottom row: days + edit/delete */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)',
+                }}>
+                  <div style={{ display: 'flex', gap: 5 }}>
                     {DAY_LABELS.map((label, dayIndex) => (
                       <span
                         key={dayIndex}
                         style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 10,
-                          fontWeight: 600,
+                          width: 22, height: 22, borderRadius: '50%',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 9, fontWeight: 600,
                           background: alarm.days.includes(dayIndex) ? 'var(--primary)' : 'transparent',
                           color: alarm.days.includes(dayIndex) ? 'white' : 'var(--text-muted)',
                           border: alarm.days.includes(dayIndex) ? 'none' : '1px solid var(--border)',
@@ -205,41 +213,28 @@ export default function Home() {
                       </span>
                     ))}
                   </div>
-                </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button
-                    onClick={() => deleteAlarm(alarm.id)}
-                    style={{ background: 'none', padding: 8 }}
-                  >
-                    <Trash2 size={18} color="var(--text-muted)" />
-                  </button>
-
-                  <div
-                    className={`toggle-switch ${alarm.enabled ? 'active' : ''}`}
-                    onClick={() => toggleAlarm(alarm.id)}
-                    style={{
-                      position: 'relative',
-                      width: 52,
-                      height: 28,
-                      background: alarm.enabled ? 'var(--primary)' : 'var(--bg-card)',
-                      borderRadius: 14,
-                      cursor: 'pointer',
-                      transition: 'background 0.3s ease',
-                      border: `1px solid ${alarm.enabled ? 'var(--primary-light)' : 'var(--border)'}`,
-                    }}
-                  >
-                    <div style={{
-                      position: 'absolute',
-                      top: 2,
-                      left: alarm.enabled ? 26 : 2,
-                      width: 22,
-                      height: 22,
-                      background: 'white',
-                      borderRadius: '50%',
-                      transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                    }} />
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button
+                      onClick={() => openEdit(alarm)}
+                      style={{
+                        background: 'rgba(42, 157, 111, 0.1)', padding: '6px 10px',
+                        borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4,
+                      }}
+                    >
+                      <Pencil size={14} color="var(--primary-light)" />
+                      <span style={{ fontSize: 12, color: 'var(--primary-light)', fontWeight: 500 }}>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => deleteAlarm(alarm.id)}
+                      style={{
+                        background: 'rgba(224, 77, 94, 0.1)', padding: '6px 10px',
+                        borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4,
+                      }}
+                    >
+                      <Trash2 size={14} color="var(--accent-red)" />
+                      <span style={{ fontSize: 12, color: 'var(--accent-red)', fontWeight: 500 }}>Delete</span>
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -259,9 +254,7 @@ export default function Home() {
           onClick={() => {
             navigator.geolocation.getCurrentPosition(
               (pos) => {
-                const { latitude, longitude } = pos.coords;
-                // Use setLocation from context
-                const event = new CustomEvent('set-location', { detail: { lat: latitude, lng: longitude } });
+                const event = new CustomEvent('set-location', { detail: { lat: pos.coords.latitude, lng: pos.coords.longitude } });
                 window.dispatchEvent(event);
               },
               () => alert('Please enable location access for accurate prayer times.')
@@ -280,7 +273,29 @@ export default function Home() {
         </motion.div>
       )}
 
-      <AddAlarmModal open={showAddModal} onClose={() => setShowAddModal(false)} />
+      {/* Floating Add Button — positioned above the bottom nav */}
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={openAdd}
+        style={{
+          position: 'fixed',
+          bottom: 88,  // above the 72px bottom nav + 16px gap
+          right: 20,
+          width: 56,
+          height: 56,
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 20px rgba(27, 107, 74, 0.4)',
+          zIndex: 50,
+        }}
+      >
+        <Plus size={24} color="white" />
+      </motion.button>
+
+      <AddAlarmModal open={showModal} onClose={closeModal} editAlarm={editingAlarm} />
     </div>
   );
 }

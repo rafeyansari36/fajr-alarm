@@ -1,3 +1,14 @@
+export const RINGTONES = [
+  { id: 'adhan-fajr', name: 'Adhan (Fajr)', pattern: [600, 800, 600, 800, 700], tempo: 0.4 },
+  { id: 'gentle-rise', name: 'Gentle Rise', pattern: [400, 500, 600, 700, 800], tempo: 0.5 },
+  { id: 'classic-alarm', name: 'Classic Alarm', pattern: [800, 1000, 800, 1000], tempo: 0.25 },
+  { id: 'urgent-bell', name: 'Urgent Bell', pattern: [1000, 1200, 1000, 1200, 1400], tempo: 0.15 },
+  { id: 'soft-chime', name: 'Soft Chime', pattern: [523, 659, 784, 1047], tempo: 0.6 },
+  { id: 'digital-beep', name: 'Digital Beep', pattern: [880, 880, 880], tempo: 0.2 },
+] as const;
+
+export type RingtoneId = typeof RINGTONES[number]['id'];
+
 export interface Alarm {
   id: string;
   time: string; // HH:MM format
@@ -6,6 +17,8 @@ export interface Alarm {
   days: number[]; // 0=Sun, 1=Mon, ... 6=Sat
   usePrayerTime: boolean;
   prayerName?: string;
+  ringtone: RingtoneId;
+  vibrate: boolean;
 }
 
 export interface AppState {

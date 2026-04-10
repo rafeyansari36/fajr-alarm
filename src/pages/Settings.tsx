@@ -215,6 +215,9 @@ export default function Settings() {
         <p className="arabic-text" style={{ fontSize: 16, marginTop: 8, color: 'var(--secondary)' }}>
           اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ
         </p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontStyle: 'italic' }}>
+          "O Allah, help me to remember You"
+        </p>
       </div>
     </div>
   );

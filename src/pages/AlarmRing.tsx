@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Camera, Volume2, X } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useApp } from '../context/AppContext';
-import { requestWakeLock, sendNotification } from '../utils/alarm';
+import { RingtonePlayer, requestWakeLock, sendNotification } from '../utils/alarm';
 import { verifyQRPayload } from '../utils/storage';
 
 export default function AlarmRing() {
@@ -11,64 +11,25 @@ export default function AlarmRing() {
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState('');
   const [dismissed, setDismissed] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const playerRef = useRef(new RingtonePlayer());
 
-  // Start alarm sound and wake lock
+  // Start alarm sound, vibration, wake lock, and notification
   useEffect(() => {
     if (!activeAlarm) return;
 
-    // Send notification
     sendNotification('Fajr Alarm', `${activeAlarm.label || 'Wake up!'} - ${activeAlarm.time}`);
-
-    // Request wake lock
     requestWakeLock().then(lock => { wakeLockRef.current = lock; });
 
-    // Play alarm sound using Web Audio API + oscillator as fallback
-    const playAlarm = () => {
-      const audioCtx = new AudioContext();
-
-      function playTone() {
-        // Create a repeating alarm pattern
-        const playNote = (freq: number, startTime: number, duration: number) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.frequency.value = freq;
-          osc.type = 'sine';
-          gain.gain.setValueAtTime(0.3, startTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-          osc.start(startTime);
-          osc.stop(startTime + duration);
-        };
-
-        const now = audioCtx.currentTime;
-        // Alarm pattern: ascending tones
-        for (let i = 0; i < 4; i++) {
-          playNote(800, now + i * 0.3, 0.25);
-          playNote(1000, now + i * 0.3 + 0.15, 0.25);
-        }
-
-        return audioCtx;
-      }
-
-      const ctx = playTone();
-
-      // Repeat the alarm pattern
-      const interval = setInterval(() => {
-        playTone();
-      }, 2000);
-
-      return { ctx, interval };
-    };
-
-    const { ctx, interval } = playAlarm();
+    // Play the selected ringtone with vibration
+    playerRef.current.start(
+      activeAlarm.ringtone || 'adhan-fajr',
+      activeAlarm.vibrate ?? true
+    );
 
     return () => {
-      clearInterval(interval);
-      ctx.close();
+      playerRef.current.stop();
       if (wakeLockRef.current) {
         wakeLockRef.current.release();
       }
@@ -78,8 +39,8 @@ export default function AlarmRing() {
   const handleScanSuccess = useCallback(async (decodedText: string) => {
     const valid = await verifyQRPayload(decodedText, state.qrSecret);
     if (valid) {
-      // Success! Dismiss alarm
       setDismissed(true);
+      playerRef.current.stop();
       if (scannerRef.current) {
         scannerRef.current.stop().catch(() => {});
       }
@@ -104,9 +65,9 @@ export default function AlarmRing() {
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         handleScanSuccess,
-        () => {} // ignore scan failures
+        () => {}
       );
-    } catch (err) {
+    } catch {
       setScanError('Camera access denied. Please allow camera permission.');
       setScanning(false);
     }
@@ -125,14 +86,9 @@ export default function AlarmRing() {
   if (dismissed) {
     return (
       <div style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
+        position: 'fixed', inset: 0, zIndex: 9999,
         background: 'var(--bg-dark)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         padding: 24,
       }}>
         <motion.div
@@ -140,14 +96,10 @@ export default function AlarmRing() {
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 200 }}
           style={{
-            width: 100,
-            height: 100,
-            borderRadius: '50%',
+            width: 100, height: 100, borderRadius: '50%',
             background: 'rgba(46, 204, 113, 0.15)',
             border: '3px solid var(--accent-green)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             marginBottom: 24,
           }}
         >
@@ -157,7 +109,7 @@ export default function AlarmRing() {
             transition={{ delay: 0.3 }}
             style={{ fontSize: 48 }}
           >
-            ✓
+            &#x2713;
           </motion.span>
         </motion.div>
         <motion.h2
@@ -191,33 +143,20 @@ export default function AlarmRing() {
 
   return (
     <div style={{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 9999,
+      position: 'fixed', inset: 0, zIndex: 9999,
       background: 'linear-gradient(180deg, #1a0a0a, #0A1628)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 24,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: 24, overflow: 'auto',
     }}>
       {/* Pulsing background rings */}
       {[1, 2, 3].map(i => (
         <motion.div
           key={i}
-          animate={{
-            scale: [1, 1.5, 1],
-            opacity: [0.1, 0.05, 0.1],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            delay: i * 0.4,
-          }}
+          animate={{ scale: [1, 1.5, 1], opacity: [0.1, 0.05, 0.1] }}
+          transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
           style={{
             position: 'absolute',
-            width: 200 + i * 100,
-            height: 200 + i * 100,
+            width: 200 + i * 100, height: 200 + i * 100,
             borderRadius: '50%',
             border: '1px solid var(--accent-red)',
           }}
@@ -229,15 +168,10 @@ export default function AlarmRing() {
         animate={{ rotate: [-5, 5, -5] }}
         transition={{ duration: 0.3, repeat: Infinity }}
         style={{
-          width: 80,
-          height: 80,
-          borderRadius: '50%',
+          width: 80, height: 80, borderRadius: '50%',
           background: 'rgba(224, 77, 94, 0.2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 24,
-          animation: 'glow-pulse 1.5s infinite',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 24, animation: 'glow-pulse 1.5s infinite',
         }}
       >
         <Volume2 size={36} color="var(--accent-red)" />
@@ -247,12 +181,7 @@ export default function AlarmRing() {
       <motion.h1
         animate={{ scale: [1, 1.02, 1] }}
         transition={{ duration: 1, repeat: Infinity }}
-        style={{
-          fontSize: 64,
-          fontWeight: 200,
-          letterSpacing: '-2px',
-          marginBottom: 8,
-        }}
+        style={{ fontSize: 64, fontWeight: 200, letterSpacing: '-2px', marginBottom: 8 }}
       >
         {activeAlarm.time}
       </motion.h1>
@@ -262,9 +191,14 @@ export default function AlarmRing() {
       </p>
 
       {activeAlarm.usePrayerTime && (
-        <p className="arabic-text" style={{ fontSize: 22, color: 'var(--secondary)', marginBottom: 32 }}>
-          حَيَّ عَلَى الصَّلَاة
-        </p>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <p className="arabic-text" style={{ fontSize: 22, color: 'var(--secondary)' }}>
+            حَيَّ عَلَى الصَّلَاة
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, fontStyle: 'italic' }}>
+            "Come to prayer"
+          </p>
+        </div>
       )}
 
       {/* Scan QR instruction */}
@@ -296,10 +230,8 @@ export default function AlarmRing() {
           <div
             id="qr-reader"
             style={{
-              width: '100%',
-              borderRadius: 'var(--radius)',
-              overflow: 'hidden',
-              marginBottom: 16,
+              width: '100%', borderRadius: 'var(--radius)',
+              overflow: 'hidden', marginBottom: 16,
             }}
           />
           <button
@@ -319,21 +251,14 @@ export default function AlarmRing() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           style={{
-            color: 'var(--accent-red)',
-            fontSize: 14,
-            marginTop: 16,
-            textAlign: 'center',
-            padding: '8px 16px',
-            background: 'rgba(224, 77, 94, 0.1)',
-            borderRadius: 8,
+            color: 'var(--accent-red)', fontSize: 14, marginTop: 16,
+            textAlign: 'center', padding: '8px 16px',
+            background: 'rgba(224, 77, 94, 0.1)', borderRadius: 8,
           }}
         >
           {scanError}
         </motion.p>
       )}
-
-      {/* Hidden audio element for alarm sound */}
-      <audio ref={audioRef} loop preload="auto" />
     </div>
   );
 }
